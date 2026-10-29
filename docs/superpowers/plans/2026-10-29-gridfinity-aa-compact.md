@@ -1,6 +1,6 @@
 # Gridfinity AA Compact Battery Holder Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:executing-plans` (Native inline execution — selected by user) to implement this plan task-by-task in the session. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build and verify the two-tier `2×2` Gridfinity AA battery holder (`Bottom Bin` and `Top Bin`, holding 44 AA batteries + 1 corner magnetic grabber) in the user's Onshape document `Gridfinity AA Compact` via the Onshape REST API.
 
