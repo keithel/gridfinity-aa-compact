@@ -132,14 +132,34 @@ All Part Studio endpoints use:
 7. **Render shaded views (visual inspection PNG):**
    - `GET /api/v10/partstudios/d/{did}/w/{wid}/e/{eid}/shadedviews?viewMatrix=isometric&outputHeight=800&outputWidth=800`
 
+8. **Rename Elements & Set Part Properties/Names:**
+   - Update element metadata/names (e.g., rename `Part Studio 1` to `AA Battery Holder Bins` and `Assembly 1` to `AA Battery Holder Stack Assembly`) via `POST /api/v10/metadata/d/{did}/w/{wid}/e/{eid}` or FeatureScript `setProperty(..., PropertyType.NAME, ...)`.
+   - Every sketch, feature, custom feature, part, and tab MUST have a clear, descriptive name.
+
 ---
 
-## 6. Implementation & Verification Criteria
+## 6. Naming Conventions (No Default Names Allowed)
+
+All elements, features, sketches, and generated parts in the Onshape document MUST be explicitly named with descriptive titles—never leave default names like `Part Studio 1`, `Assembly 1`, `Part 1`, `Sketch 1`, or `Extrude 1`:
+
+1. **Document Tabs (Elements):**
+   - Part Studio (`3877013e0cee0529c7476669`): Rename from `Part Studio 1` → **`AA Battery Holder Bins`**
+   - Assembly (`84c8a0fd2b9361f75c2d3a37`): Rename from `Assembly 1` → **`AA Battery Holder Assembly`**
+   - Feature Studio (if created): Name **`Gridfinity AA Holder Generator`**
+2. **Generated Solid Parts:**
+   - Lower bin part: **`Bottom Bin`**
+   - Upper bin part: **`Top Bin`**
+3. **Sketches & Features in the Feature Tree:**
+   - Every sketch and modeling feature in the Part Studio feature tree must carry an explicit descriptive `name` field in its `BTMFeature` JSON payload (e.g., `Base Gridfinity Feet Sketch`, `Main Body Extrude`, `Stacking Lip Profile`, `Honeycomb 22xAA Pocket Cut`, `Corner Grabber Receptacle`, `Top Bin Finger Lift Grooves`, etc.).
+
+---
+
+## 7. Implementation & Verification Criteria
 
 1. **Onshape Construction:**
-   - Build both parts cleanly in `Part Studio 1` (`3877013e0cee0529c7476669`) of document `b5b3469743d50b565ee40c26` via the Onshape REST API.
-   - Name the resulting solid bodies `Bottom Bin (2x2 8U)` and `Top Bin (2x2 4U)`.
-   - Position the two parts cleanly (e.g., either stacked in-place at `Z = 0` and `Z = 56.00 mm`, or side-by-side at `Z = 0` for immediate 3D printing export, plus assembled in `Assembly 1` `84c8a0fd2b9361f75c2d3a37`).
+   - Build both parts cleanly in the Part Studio (`3877013e0cee0529c7476669`) of document `b5b3469743d50b565ee40c26` via the Onshape REST API.
+   - Apply all naming conventions from Section 6 to tabs, features, sketches, and solid bodies.
+   - Position the two parts cleanly (e.g., either stacked in-place at `Z = 0` and `Z = 56.00 mm`, or side-by-side at `Z = 0` for immediate 3D printing export, plus assembled in `AA Battery Holder Assembly` `84c8a0fd2b9361f75c2d3a37`).
 2. **Automated Verification:**
-   - Query the Onshape REST API for feature regeneration status (zero errors/warnings), part list, bounding boxes, and mass/volume properties.
+   - Query the Onshape REST API for element names, feature tree names, feature regeneration status (zero errors/warnings), part names, bounding boxes, and mass/volume properties.
    - Export/render shaded thumbnail views from Onshape to visually verify the `2×2` base feet, `5-4-5-4-5` honeycomb pockets, corner grabber pass-through/receptacle, stacking lip, and finger-lift recesses.
