@@ -159,16 +159,16 @@ function makeBottomGrabberRingGroove(context is Context, id is Id, centerX is Va
 function makeTopGrabberMagnetIcon(context is Context, id is Id, centerX is ValueWithUnits,
     zSurface is ValueWithUnits, depth is ValueWithUnits)
 {{
-    // Debossed U-Magnet icon centered on the 6.99 mm front-right deck (Y in [-40.50, -36.00 mm], width 4.20 mm, height 4.50 mm, ~1.25 mm margin top & bottom)
+    // Debossed U-Magnet icon centered on the 6.99 mm front-right deck (Y in [-40.75, -35.75 mm], width 4.50 mm, height 5.00 mm, ~1.00 mm margin top & bottom)
     var zMin = zSurface - depth;
     var zMax = zSurface + 0.50 * millimeter;
-    var archCenterY = -38.40 * millimeter;
+    var archCenterY = -38.50 * millimeter;
 
-    // 1. Semicircular bottom bend (R_out = 2.10 mm, R_in = 1.00 mm, stroke = 1.10 mm, Y <= -38.35 mm)
+    // 1. Semicircular bottom bend (R_out = 2.25 mm, R_in = 1.05 mm, stroke = 1.20 mm, Y <= -38.45 mm)
     makeCylinderZ(context, id + "archOuterCyl", centerX, archCenterY,
-        4.20 * millimeter, zMin, zMax);
+        4.50 * millimeter, zMin, zMax);
     makeCylinderZ(context, id + "archInnerCyl", centerX, archCenterY,
-        2.00 * millimeter, zMin - 0.50 * millimeter, zMax + 0.50 * millimeter);
+        2.10 * millimeter, zMin - 0.50 * millimeter, zMax + 0.50 * millimeter);
     opBoolean(context, id + "archRing", {{
         "tools" : qCreatedBy(id + "archInnerCyl", EntityType.BODY),
         "targets" : qCreatedBy(id + "archOuterCyl", EntityType.BODY),
@@ -177,7 +177,7 @@ function makeTopGrabberMagnetIcon(context is Context, id is Id, centerX is Value
 
     fCuboid(context, id + "lowerHalfClip", {{
         "corner1" : vector(centerX - 3.00 * millimeter, -41.50 * millimeter, zMin - 0.50 * millimeter),
-        "corner2" : vector(centerX + 3.00 * millimeter, -38.35 * millimeter, zMax + 0.50 * millimeter)
+        "corner2" : vector(centerX + 3.00 * millimeter, -38.45 * millimeter, zMax + 0.50 * millimeter)
     }});
     opBoolean(context, id + "clipArchLowerHalf", {{
         "tools" : qUnion([
@@ -187,14 +187,14 @@ function makeTopGrabberMagnetIcon(context is Context, id is Id, centerX is Value
         "operationType" : BooleanOperationType.INTERSECTION
     }});
 
-    // 2. Left and right straight vertical legs of the U-arch (Y in [-38.40, -37.10 mm])
+    // 2. Left and right straight vertical legs of the U-arch (Y in [-38.50, -36.95 mm])
     fCuboid(context, id + "leftLeg", {{
-        "corner1" : vector(centerX - 2.10 * millimeter, archCenterY, zMin),
-        "corner2" : vector(centerX - 1.00 * millimeter, -37.10 * millimeter, zMax)
+        "corner1" : vector(centerX - 2.25 * millimeter, archCenterY, zMin),
+        "corner2" : vector(centerX - 1.05 * millimeter, -36.95 * millimeter, zMax)
     }});
     fCuboid(context, id + "rightLeg", {{
-        "corner1" : vector(centerX + 1.00 * millimeter, archCenterY, zMin),
-        "corner2" : vector(centerX + 2.10 * millimeter, -37.10 * millimeter, zMax)
+        "corner1" : vector(centerX + 1.05 * millimeter, archCenterY, zMin),
+        "corner2" : vector(centerX + 2.25 * millimeter, -36.95 * millimeter, zMax)
     }});
     opBoolean(context, id + "unionUArch", {{
         "tools" : qUnion([
@@ -205,14 +205,14 @@ function makeTopGrabberMagnetIcon(context is Context, id is Id, centerX is Value
         "operationType" : BooleanOperationType.UNION
     }});
 
-    // 3. Left and right magnet pole tips (Y in [-36.75, -36.00 mm], separated from U-arch by a 0.35 mm ridge)
+    // 3. Left and right magnet pole tips (Y in [-36.55, -35.75 mm], separated from U-arch by a 0.40 mm ridge)
     fCuboid(context, id + "leftPoleTip", {{
-        "corner1" : vector(centerX - 2.10 * millimeter, -36.75 * millimeter, zMin),
-        "corner2" : vector(centerX - 1.00 * millimeter, -36.00 * millimeter, zMax)
+        "corner1" : vector(centerX - 2.25 * millimeter, -36.55 * millimeter, zMin),
+        "corner2" : vector(centerX - 1.05 * millimeter, -35.75 * millimeter, zMax)
     }});
     fCuboid(context, id + "rightPoleTip", {{
-        "corner1" : vector(centerX + 1.00 * millimeter, -36.75 * millimeter, zMin),
-        "corner2" : vector(centerX + 2.10 * millimeter, -36.00 * millimeter, zMax)
+        "corner1" : vector(centerX + 1.05 * millimeter, -36.55 * millimeter, zMin),
+        "corner2" : vector(centerX + 2.25 * millimeter, -35.75 * millimeter, zMax)
     }});
 }}
 
