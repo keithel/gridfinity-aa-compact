@@ -85,3 +85,7 @@ def test_assembly_contains_bins_and_battery_grabber():
     instance_keys = {(inst.get("elementId"), inst.get("partId")) for inst in instances}
     assert len(instances) == 3
     assert instance_keys == expected_keys
+
+    asm_bbox = client.get_assembly_bounding_box()
+    # Grabber top pommel sits at Z = 4.00mm (floor) + 0.15mm (#magnet_protrusion) + 105.00mm = 109.15mm
+    assert math.isclose(asm_bbox["highZ"] * 1000.0, 109.15, abs_tol=0.05)

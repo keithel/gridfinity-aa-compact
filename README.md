@@ -20,7 +20,7 @@ Parametric Onshape FeatureScript generator and verification suite for a compact,
   - **22 × AA Battery Pockets (`Ø15.00 mm`):** Sized with `+0.62 mm` clearance over `Ø14.38 mm` max AA cells (Rayovac Fusion Alkaline, EBL NiMH, PowerOwl NiMH) for zero-friction vertical removal via the magnetic grabber, while maintaining a minimum `0.80 mm` inter-cell wall (`P_x = 15.80 mm`, `P_y = 13.68 mm`).
   - **1 × Corner Magnetic Grabber Slot (`Ø12.80 mm` at `X = +31.60 mm, Y = -27.36 mm`):**
     - Features a `1.00 mm × 45°` conical entry funnel (`Ø14.80 mm → Ø12.80 mm`) on both bins for self-centering.
-    - Cut completely **through** the `Top Bin` (floor and foot) so the `105 mm` grabber drops straight through the `Top Bin` and seats on the `Bottom Bin` floor (`Z = 4.00 mm`), protruding `25.0 mm` above the `Top Bin` rim (`Z = 109.0 mm`).
+    - Cut completely **through** the `Top Bin` (floor and foot) so the `105 mm` grabber drops straight through the `Top Bin` and rests on its protruding magnet (`#magnet_protrusion = 0.15 mm`) on the `Bottom Bin` floor (`Z = 4.00 mm`), placing the grabber body from `Z = 4.15 mm` to `Z = 109.15 mm` (`25.15 mm` above the `Top Bin` rim).
     - **Visual Identification:** Marked by a `4.50 × 5.00 mm` debossed **U-Magnet icon** (`0.80 mm` deep) on the front-right deck of the `Top Bin`, and a concentric target ring groove (`Ø15.50–16.50 mm`, `0.80 mm` deep) on the `Bottom Bin` shoulder.
 - **Vertical Stack Budget (`121 mm` Drawer Clearance):**
   - **`Bottom Bin` (`8U`):** `56.00 mm` to stacking seat + `4.40 mm` Gridfinity stacking lip (`60.40 mm` overall height; `4.00 mm` floor thickness; `50.50 mm` AA cells sit `1.50 mm` below the `56.00 mm` stacking seat).

@@ -21,13 +21,37 @@ GRABBER_SOURCE_WID = "85c21653a7b2a35730264c4a"
 GRABBER_SOURCE_EID = "efc09f3688cba75a14ed5637"
 
 
-def _get_grabber_assembly_transform() -> list[float]:
-    """Return 4x4 row-major transform (meters) seating Main Body magnet-down in the grabber pocket."""
+def _read_grabber_magnet_protrusion_mm(client: OnshapeClient, grabber_eid: str) -> float:
+    """Read the #magnet_protrusion variable (in mm) from the Battery Grabber Part Studio."""
+    feats = client.get_features(grabber_eid)
+    for feat in feats.get("features", []):
+        if feat.get("featureType") != "assignVariable":
+            continue
+        params = {p.get("parameterId"): p for p in feat.get("parameters", [])}
+        if params.get("name", {}).get("value") == "magnet_protrusion":
+            expr = (
+                params.get("lengthValue", {}).get("expression")
+                or params.get("value", {}).get("expression")
+                or ""
+            )
+            num_str = expr.replace("mm", "").strip()
+            if num_str:
+                return float(num_str)
+    return DIMENSIONS["grabber_magnet_protrusion_mm"]
+
+
+def _get_grabber_assembly_transform(magnet_protrusion_mm: float) -> list[float]:
+    """Return 4x4 row-major transform (meters) seating Main Body lifted by #magnet_protrusion off the pocket floor."""
     grabber_slot = next(s for s in get_honeycomb_slots() if s.kind == "GRABBER")
     tx_m = grabber_slot.x_mm / 1000.0
     ty_m = grabber_slot.y_mm / 1000.0
-    # 180 deg rotation about X-axis: local Z=105mm (magnet head) -> Z=4mm floor; local Z=0mm (pommel) -> Z=109mm
-    tz_m = (DIMENSIONS["bottom_floor_z_mm"] + DIMENSIONS["grabber_length_mm"]) / 1000.0
+    # 180 deg rotation about X-axis: local Z=105mm (magnet head face) -> Z = 4.00 + magnet_protrusion_mm;
+    # local Z=0mm (pommel) -> Z = 4.00 + 105.00 + magnet_protrusion_mm (109.15mm)
+    tz_m = (
+        DIMENSIONS["bottom_floor_z_mm"]
+        + DIMENSIONS["grabber_length_mm"]
+        + magnet_protrusion_mm
+    ) / 1000.0
     return [
         1.0,  0.0,  0.0, tx_m,
         0.0, -1.0,  0.0, ty_m,
@@ -166,7 +190,8 @@ def build_and_publish() -> dict[str, Any]:
             part_id=grabber_main_pid, part_studio_eid=grabber_eid
         )
 
-    # Seat Main Body in the front-right grabber pocket (magnet-end down, handle up)
+    # Seat Main Body in the front-right grabber pocket (magnet-end down, lifted by #magnet_protrusion)
+    magnet_protrusion_mm = _read_grabber_magnet_protrusion_mm(client, grabber_eid)
     updated_instances = client.get_assembly_instances(client.assembly_eid)
     grabber_inst = next(
         inst
@@ -175,7 +200,7 @@ def build_and_publish() -> dict[str, Any]:
     )
     client.transform_assembly_occurrence(
         node_id=grabber_inst["id"],
-        transform=_get_grabber_assembly_transform(),
+        transform=_get_grabber_assembly_transform(magnet_protrusion_mm),
         aeid=client.assembly_eid,
     )
 

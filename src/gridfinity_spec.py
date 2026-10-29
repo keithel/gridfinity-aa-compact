@@ -33,6 +33,7 @@ DIMENSIONS: dict[str, float] = {
     "aa_bore_diameter_mm": 15.00,
     "grabber_max_diameter_mm": 11.95,
     "grabber_length_mm": 105.00,
+    "grabber_magnet_protrusion_mm": 0.15,
     "grabber_bore_diameter_mm": 12.80,
     "grabber_funnel_chamfer_mm": 1.00,
     "pitch_x_mm": 15.80,

@@ -314,6 +314,15 @@ class OnshapeClient:
         resp.raise_for_status()
         return resp.json() if resp.text else {}
 
+    def get_assembly_bounding_box(self, aeid: str | None = None) -> dict[str, Any]:
+        target_aeid = aeid or self.assembly_eid
+        resp = self.session.get(
+            self._url(f"assemblies/d/{self.did}/w/{self.wid}/e/{target_aeid}/boundingboxes"),
+            timeout=30,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
     def get_assembly_shaded_view(
         self,
         aeid: str | None = None,
