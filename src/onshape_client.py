@@ -193,7 +193,18 @@ class OnshapeClient:
             timeout=60,
         )
         resp.raise_for_status()
-        return resp.json()
+        data = resp.json()
+        bodies = data.setdefault("bodies", {})
+        for part in self.get_parts(eid):
+            pid = part.get("partId")
+            if pid and pid not in bodies:
+                part_resp = self.session.get(
+                    self._url(f"parts/d/{self.did}/w/{self.wid}/e/{eid}/partid/{pid}/massproperties"),
+                    timeout=30,
+                )
+                part_resp.raise_for_status()
+                bodies.update(part_resp.json().get("bodies", {}))
+        return data
 
     def get_shaded_view(
         self,
