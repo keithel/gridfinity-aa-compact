@@ -159,16 +159,16 @@ function makeBottomGrabberRingGroove(context is Context, id is Id, centerX is Va
 function makeTopGrabberMagnetIcon(context is Context, id is Id, centerX is ValueWithUnits,
     zSurface is ValueWithUnits, depth is ValueWithUnits)
 {{
-    // Large debossed U-Magnet icon on the 6.99 mm front-right deck (Y in [-41.15, -34.95 mm], width 5.60 mm, height 6.20 mm)
+    // Debossed U-Magnet icon centered on the 6.99 mm front-right deck (Y in [-40.50, -36.00 mm], width 4.20 mm, height 4.50 mm, ~1.25 mm margin top & bottom)
     var zMin = zSurface - depth;
     var zMax = zSurface + 0.50 * millimeter;
-    var archCenterY = -38.35 * millimeter;
+    var archCenterY = -38.40 * millimeter;
 
-    // 1. Semicircular bottom bend (R_out = 2.80 mm, R_in = 1.30 mm, Y <= -38.30 mm)
+    // 1. Semicircular bottom bend (R_out = 2.10 mm, R_in = 1.00 mm, stroke = 1.10 mm, Y <= -38.35 mm)
     makeCylinderZ(context, id + "archOuterCyl", centerX, archCenterY,
-        5.60 * millimeter, zMin, zMax);
+        4.20 * millimeter, zMin, zMax);
     makeCylinderZ(context, id + "archInnerCyl", centerX, archCenterY,
-        2.60 * millimeter, zMin - 0.50 * millimeter, zMax + 0.50 * millimeter);
+        2.00 * millimeter, zMin - 0.50 * millimeter, zMax + 0.50 * millimeter);
     opBoolean(context, id + "archRing", {{
         "tools" : qCreatedBy(id + "archInnerCyl", EntityType.BODY),
         "targets" : qCreatedBy(id + "archOuterCyl", EntityType.BODY),
@@ -176,8 +176,8 @@ function makeTopGrabberMagnetIcon(context is Context, id is Id, centerX is Value
     }});
 
     fCuboid(context, id + "lowerHalfClip", {{
-        "corner1" : vector(centerX - 3.50 * millimeter, -42.00 * millimeter, zMin - 0.50 * millimeter),
-        "corner2" : vector(centerX + 3.50 * millimeter, -38.30 * millimeter, zMax + 0.50 * millimeter)
+        "corner1" : vector(centerX - 3.00 * millimeter, -41.50 * millimeter, zMin - 0.50 * millimeter),
+        "corner2" : vector(centerX + 3.00 * millimeter, -38.35 * millimeter, zMax + 0.50 * millimeter)
     }});
     opBoolean(context, id + "clipArchLowerHalf", {{
         "tools" : qUnion([
@@ -187,14 +187,14 @@ function makeTopGrabberMagnetIcon(context is Context, id is Id, centerX is Value
         "operationType" : BooleanOperationType.INTERSECTION
     }});
 
-    // 2. Left and right straight vertical legs of the U-arch (Y in [-38.35, -36.35 mm])
+    // 2. Left and right straight vertical legs of the U-arch (Y in [-38.40, -37.10 mm])
     fCuboid(context, id + "leftLeg", {{
-        "corner1" : vector(centerX - 2.80 * millimeter, archCenterY, zMin),
-        "corner2" : vector(centerX - 1.30 * millimeter, -36.35 * millimeter, zMax)
+        "corner1" : vector(centerX - 2.10 * millimeter, archCenterY, zMin),
+        "corner2" : vector(centerX - 1.00 * millimeter, -37.10 * millimeter, zMax)
     }});
     fCuboid(context, id + "rightLeg", {{
-        "corner1" : vector(centerX + 1.30 * millimeter, archCenterY, zMin),
-        "corner2" : vector(centerX + 2.80 * millimeter, -36.35 * millimeter, zMax)
+        "corner1" : vector(centerX + 1.00 * millimeter, archCenterY, zMin),
+        "corner2" : vector(centerX + 2.10 * millimeter, -37.10 * millimeter, zMax)
     }});
     opBoolean(context, id + "unionUArch", {{
         "tools" : qUnion([
@@ -205,14 +205,14 @@ function makeTopGrabberMagnetIcon(context is Context, id is Id, centerX is Value
         "operationType" : BooleanOperationType.UNION
     }});
 
-    // 3. Left and right magnet pole tips (Y in [-35.95, -34.95 mm], separated from U-arch by a 0.40 mm ridge)
+    // 3. Left and right magnet pole tips (Y in [-36.75, -36.00 mm], separated from U-arch by a 0.35 mm ridge)
     fCuboid(context, id + "leftPoleTip", {{
-        "corner1" : vector(centerX - 2.80 * millimeter, -35.95 * millimeter, zMin),
-        "corner2" : vector(centerX - 1.30 * millimeter, -34.95 * millimeter, zMax)
+        "corner1" : vector(centerX - 2.10 * millimeter, -36.75 * millimeter, zMin),
+        "corner2" : vector(centerX - 1.00 * millimeter, -36.00 * millimeter, zMax)
     }});
     fCuboid(context, id + "rightPoleTip", {{
-        "corner1" : vector(centerX + 1.30 * millimeter, -35.95 * millimeter, zMin),
-        "corner2" : vector(centerX + 2.80 * millimeter, -34.95 * millimeter, zMax)
+        "corner1" : vector(centerX + 1.00 * millimeter, -36.75 * millimeter, zMin),
+        "corner2" : vector(centerX + 2.10 * millimeter, -36.00 * millimeter, zMax)
     }});
 }}
 
