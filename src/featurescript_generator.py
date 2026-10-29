@@ -129,6 +129,93 @@ function makeFunnelConeZ(context is Context, id is Id, centerX is ValueWithUnits
     }});
 }}
 
+function makeBottomGrabberRingGroove(context is Context, id is Id, centerX is ValueWithUnits,
+    centerY is ValueWithUnits, zSurface is ValueWithUnits, depth is ValueWithUnits)
+{{
+    // Concentric ring groove (ID 15.50 mm, OD 16.50 mm) around the Bottom Bin grabber funnel at Z = 56.00 mm,
+    // clipped cleanly to the flat 77.60 x 77.60 mm shoulder so it never touches the stacking lip or AA pockets
+    makeCylinderZ(context, id + "ringOuter", centerX, centerY,
+        16.50 * millimeter, zSurface - depth, zSurface + 0.50 * millimeter);
+    makeCylinderZ(context, id + "ringInner", centerX, centerY,
+        15.50 * millimeter, zSurface - depth - 0.50 * millimeter, zSurface + 1.00 * millimeter);
+    opBoolean(context, id + "ringTube", {{
+        "tools" : qCreatedBy(id + "ringInner", EntityType.BODY),
+        "targets" : qCreatedBy(id + "ringOuter", EntityType.BODY),
+        "operationType" : BooleanOperationType.SUBTRACTION
+    }});
+
+    makeRoundedRectPrism(context, id + "shoulderClip", 0 * millimeter, 0 * millimeter,
+        77.60 * millimeter, 77.60 * millimeter, 1.00 * millimeter,
+        zSurface - depth - 0.50 * millimeter, zSurface + 1.00 * millimeter);
+    opBoolean(context, id + "clipRingToShoulder", {{
+        "tools" : qUnion([
+            qCreatedBy(id + "ringOuter", EntityType.BODY),
+            qCreatedBy(id + "shoulderClip", EntityType.BODY)
+        ]),
+        "operationType" : BooleanOperationType.INTERSECTION
+    }});
+}}
+
+function makeTopGrabberMagnetIcon(context is Context, id is Id, centerX is ValueWithUnits,
+    zSurface is ValueWithUnits, depth is ValueWithUnits)
+{{
+    // Large debossed U-Magnet icon on the 6.99 mm front-right deck (Y in [-41.15, -34.95 mm], width 5.60 mm, height 6.20 mm)
+    var zMin = zSurface - depth;
+    var zMax = zSurface + 0.50 * millimeter;
+    var archCenterY = -38.35 * millimeter;
+
+    // 1. Semicircular bottom bend (R_out = 2.80 mm, R_in = 1.30 mm, Y <= -38.30 mm)
+    makeCylinderZ(context, id + "archOuterCyl", centerX, archCenterY,
+        5.60 * millimeter, zMin, zMax);
+    makeCylinderZ(context, id + "archInnerCyl", centerX, archCenterY,
+        2.60 * millimeter, zMin - 0.50 * millimeter, zMax + 0.50 * millimeter);
+    opBoolean(context, id + "archRing", {{
+        "tools" : qCreatedBy(id + "archInnerCyl", EntityType.BODY),
+        "targets" : qCreatedBy(id + "archOuterCyl", EntityType.BODY),
+        "operationType" : BooleanOperationType.SUBTRACTION
+    }});
+
+    fCuboid(context, id + "lowerHalfClip", {{
+        "corner1" : vector(centerX - 3.50 * millimeter, -42.00 * millimeter, zMin - 0.50 * millimeter),
+        "corner2" : vector(centerX + 3.50 * millimeter, -38.30 * millimeter, zMax + 0.50 * millimeter)
+    }});
+    opBoolean(context, id + "clipArchLowerHalf", {{
+        "tools" : qUnion([
+            qCreatedBy(id + "archOuterCyl", EntityType.BODY),
+            qCreatedBy(id + "lowerHalfClip", EntityType.BODY)
+        ]),
+        "operationType" : BooleanOperationType.INTERSECTION
+    }});
+
+    // 2. Left and right straight vertical legs of the U-arch (Y in [-38.35, -36.35 mm])
+    fCuboid(context, id + "leftLeg", {{
+        "corner1" : vector(centerX - 2.80 * millimeter, archCenterY, zMin),
+        "corner2" : vector(centerX - 1.30 * millimeter, -36.35 * millimeter, zMax)
+    }});
+    fCuboid(context, id + "rightLeg", {{
+        "corner1" : vector(centerX + 1.30 * millimeter, archCenterY, zMin),
+        "corner2" : vector(centerX + 2.80 * millimeter, -36.35 * millimeter, zMax)
+    }});
+    opBoolean(context, id + "unionUArch", {{
+        "tools" : qUnion([
+            qCreatedBy(id + "archOuterCyl", EntityType.BODY),
+            qCreatedBy(id + "leftLeg", EntityType.BODY),
+            qCreatedBy(id + "rightLeg", EntityType.BODY)
+        ]),
+        "operationType" : BooleanOperationType.UNION
+    }});
+
+    // 3. Left and right magnet pole tips (Y in [-35.95, -34.95 mm], separated from U-arch by a 0.40 mm ridge)
+    fCuboid(context, id + "leftPoleTip", {{
+        "corner1" : vector(centerX - 2.80 * millimeter, -35.95 * millimeter, zMin),
+        "corner2" : vector(centerX - 1.30 * millimeter, -34.95 * millimeter, zMax)
+    }});
+    fCuboid(context, id + "rightPoleTip", {{
+        "corner1" : vector(centerX + 1.30 * millimeter, -35.95 * millimeter, zMin),
+        "corner2" : vector(centerX + 2.80 * millimeter, -34.95 * millimeter, zMax)
+    }});
+}}
+
 annotation {{ "Feature Type Name" : "Bottom Bin (2x2 8U) Generator" }}
 export const buildBottomBin = defineFeature(function(context is Context, id is Id, definition is map)
     precondition
@@ -227,6 +314,12 @@ export const buildBottomBin = defineFeature(function(context is Context, id is I
             55.00 * millimeter, 57.00 * millimeter);
         cutQueries = append(cutQueries, qCreatedBy(id + "grabberFunnel", EntityType.BODY));
 
+        // Concentric target ring groove on Bottom Bin shoulder around grabber slot
+        makeBottomGrabberRingGroove(context, id + "grabberRingGroove",
+            {grabber_slot.x_mm:.4f} * millimeter, {grabber_slot.y_mm:.4f} * millimeter,
+            56.00 * millimeter, 0.80 * millimeter);
+        cutQueries = append(cutQueries, qCreatedBy(id + "grabberRingGroove", EntityType.BODY));
+
         opBoolean(context, id + "subtractPockets", {{
             "tools" : qUnion(cutQueries),
             "targets" : qCreatedBy(id + "bottomBinBody", EntityType.BODY),
@@ -321,6 +414,11 @@ export const buildTopBin = defineFeature(function(context is Context, id is Id, 
             14.80 * millimeter, 1.00 * millimeter,
             zTop - 1.00 * millimeter, zTop + 1.00 * millimeter);
         cutQueries = append(cutQueries, qCreatedBy(id + "grabberFunnel", EntityType.BODY));
+
+        // Debossed U-Magnet icon on the front-right deck of the Top Bin
+        makeTopGrabberMagnetIcon(context, id + "grabberMagnetIcon",
+            {grabber_slot.x_mm:.4f} * millimeter, zTop, 0.80 * millimeter);
+        cutQueries = append(cutQueries, qCreatedBy(id + "grabberMagnetIcon", EntityType.BODY));
 
         // Front and rear finger-lift grooves: 40.0 mm wide in X [-20, +20], 2.5 mm deep into Y = ±41.75 mm, Z in [72.0, 80.0 mm]
         fCuboid(context, id + "frontFingerGroove", {{

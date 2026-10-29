@@ -46,3 +46,17 @@ def test_onshape_client_connects_to_document():
     elements = client.get_elements()
     ids = {el["id"] for el in elements}
     assert client.partstudio_eid in ids
+
+
+def test_grabber_identifiers_bottom_ring_and_top_magnet_icon():
+    from src.featurescript_generator import generate_feature_studio_code
+
+    code = generate_feature_studio_code()
+    bottom_section = code.split("export const buildBottomBin")[1].split("export const buildTopBin")[0]
+    top_section = code.split("export const buildTopBin")[1]
+
+    # Bottom bin gets only the concentric ring groove; Top bin gets only the U-magnet icon
+    assert "makeBottomGrabberRingGroove" in bottom_section
+    assert "makeTopGrabberMagnetIcon" not in bottom_section
+    assert "makeTopGrabberMagnetIcon" in top_section
+    assert "makeBottomGrabberRingGroove" not in top_section
