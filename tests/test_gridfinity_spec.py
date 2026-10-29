@@ -55,8 +55,9 @@ def test_grabber_identifiers_bottom_ring_and_top_magnet_icon():
     bottom_section = code.split("export const buildBottomBin")[1].split("export const buildTopBin")[0]
     top_section = code.split("export const buildTopBin")[1]
 
-    # Bottom bin gets only the concentric ring groove; Top bin gets only the U-magnet icon
+    # Bottom bin gets only the concentric ring groove; Top bin gets only the U-magnet icon and filleted finger grooves
     assert "makeBottomGrabberRingGroove" in bottom_section
     assert "makeTopGrabberMagnetIcon" not in bottom_section
     assert "makeTopGrabberMagnetIcon" in top_section
     assert "makeBottomGrabberRingGroove" not in top_section
+    assert "makeFingerLiftGroove" in top_section

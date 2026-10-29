@@ -216,6 +216,44 @@ function makeTopGrabberMagnetIcon(context is Context, id is Id, centerX is Value
     }});
 }}
 
+function makeFingerLiftGroove(context is Context, id is Id, yMin is ValueWithUnits,
+    yMax is ValueWithUnits, yInnerFace is ValueWithUnits)
+{{
+    var xHalf = 20.00 * millimeter;
+    var zMin = 72.00 * millimeter;
+    var zMax = 80.00 * millimeter;
+    var yMid = (yMin + yMax) / 2;
+
+    fCuboid(context, id + "grooveBox", {{
+        "corner1" : vector(-xHalf, yMin, zMin),
+        "corner2" : vector(xHalf, yMax, zMax)
+    }});
+
+    var boxEdges = qCreatedBy(id + "grooveBox", EntityType.EDGE);
+    var endEdges = qUnion([
+        qContainsPoint(boxEdges, vector(-xHalf, yMid, zMin)),
+        qContainsPoint(boxEdges, vector(-xHalf, yMid, zMax)),
+        qContainsPoint(boxEdges, vector(xHalf, yMid, zMin)),
+        qContainsPoint(boxEdges, vector(xHalf, yMid, zMax))
+    ]);
+
+    // Round left and right ends of the 8.0 mm tall groove into a smooth pill/stadium profile
+    opFillet(context, id + "filletEnds", {{
+        "entities" : endEdges,
+        "radius" : 3.95 * millimeter
+    }});
+
+    // Slightly round the inner back perimeter while keeping a crisp, positive horizontal top lifting shelf
+    var innerBackFace = qContainsPoint(
+        qCreatedBy(id + "grooveBox", EntityType.FACE),
+        vector(0 * millimeter, yInnerFace, (zMin + zMax) / 2)
+    );
+    opFillet(context, id + "filletInnerBack", {{
+        "entities" : innerBackFace,
+        "radius" : 0.80 * millimeter
+    }});
+}}
+
 annotation {{ "Feature Type Name" : "Bottom Bin (2x2 8U) Generator" }}
 export const buildBottomBin = defineFeature(function(context is Context, id is Id, definition is map)
     precondition
@@ -420,17 +458,13 @@ export const buildTopBin = defineFeature(function(context is Context, id is Id, 
             {grabber_slot.x_mm:.4f} * millimeter, zTop, 0.80 * millimeter);
         cutQueries = append(cutQueries, qCreatedBy(id + "grabberMagnetIcon", EntityType.BODY));
 
-        // Front and rear finger-lift grooves: 40.0 mm wide in X [-20, +20], 2.5 mm deep into Y = ±41.75 mm, Z in [72.0, 80.0 mm]
-        fCuboid(context, id + "frontFingerGroove", {{
-            "corner1" : vector(-20.00 * millimeter, -43.00 * millimeter, 72.00 * millimeter),
-            "corner2" : vector(20.00 * millimeter, -39.25 * millimeter, 80.00 * millimeter)
-        }});
+        // Front and rear finger-lift grooves: 40.0 mm wide in X [-20, +20], 2.5 mm deep into Y = ±41.75 mm, Z in [72.0, 80.0 mm] with rounded ends
+        makeFingerLiftGroove(context, id + "frontFingerGroove",
+            -43.00 * millimeter, -39.25 * millimeter, -39.25 * millimeter);
         cutQueries = append(cutQueries, qCreatedBy(id + "frontFingerGroove", EntityType.BODY));
 
-        fCuboid(context, id + "rearFingerGroove", {{
-            "corner1" : vector(-20.00 * millimeter, 39.25 * millimeter, 72.00 * millimeter),
-            "corner2" : vector(20.00 * millimeter, 43.00 * millimeter, 80.00 * millimeter)
-        }});
+        makeFingerLiftGroove(context, id + "rearFingerGroove",
+            39.25 * millimeter, 43.00 * millimeter, 39.25 * millimeter);
         cutQueries = append(cutQueries, qCreatedBy(id + "rearFingerGroove", EntityType.BODY));
 
         opBoolean(context, id + "subtractTopPockets", {{
