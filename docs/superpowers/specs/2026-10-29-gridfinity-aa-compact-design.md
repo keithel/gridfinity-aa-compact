@@ -90,11 +90,56 @@ All 23 hole centers lie comfortably inside the `78.30 × 78.30 mm` inner lip bou
 
 ---
 
-## 5. Implementation & Verification Criteria
+## 5. Onshape API Access, References & Endpoint Guide
+
+To ensure any agent or fresh session has everything needed to authenticate, build, and verify the CAD model without prior chat context:
+
+### 5.1 Reference Documentation & Links
+- **API Explorer:** https://cad.onshape.com/glassworks/explorer/
+- **Onshape REST Documentation:** https://onshape-public.github.io/docs/api-intro/
+- **Onshape Public Sample Code:** https://github.com/onshape-public
+- **Base API URL:** `https://cad.onshape.com/api/v10`
+
+### 5.2 Authentication & Credentials
+- **Authentication Method:** HTTP Basic Auth (`access_key:secret_key`) or environment variables from `.env` in the workspace root (`/home/kyzik/tmp/onshape_gridifinity_batt/.env`):
+  - `ONSHAPE_ACCESS_KEY=<ACCESS KEY HERE>`
+  - `ONSHAPE_SECRET_KEY=<SECRET KEY HERE>`
+- **Example `curl` invocation:**
+  ```bash
+  curl -s -u "$ONSHAPE_ACCESS_KEY:$ONSHAPE_SECRET_KEY" \
+    "https://cad.onshape.com/api/v10/documents/d/b5b3469743d50b565ee40c26/w/0474acc4041cedb16334c819/elements"
+  ```
+
+### 5.3 Key Onshape REST Endpoints for This Project
+All Part Studio endpoints use:
+- `did = b5b3469743d50b565ee40c26`
+- `wid = 0474acc4041cedb16334c819`
+- `eid = 3877013e0cee0529c7476669` (`Part Studio 1`)
+
+1. **Inspect existing features & `serializationVersion` / `sourceMicroversion`:**
+   - `GET /api/v10/partstudios/d/{did}/w/{wid}/e/{eid}/features`
+2. **Evaluate FeatureScript queries / expressions:**
+   - `POST /api/v10/partstudios/d/{did}/w/{wid}/e/{eid}/featurescript`
+3. **Add or update features in Part Studio (e.g., sketches, extrudes, chamfers, or custom FeatureScript feature definitions):**
+   - `POST /api/v10/partstudios/d/{did}/w/{wid}/e/{eid}/features`
+   - Or update full feature studio / custom feature studio element if using a Feature Studio (`POST /api/v10/featurestudios/d/{did}/w/{wid}` to create a Feature Studio, `POST /api/v10/featurestudios/d/{did}/w/{wid}/e/{feid}` to push clean FeatureScript code, and `POST /api/v10/partstudios/d/{did}/w/{wid}/e/{eid}/features` to instantiate the custom feature in `Part Studio 1`).
+4. **Verify generated solid parts & names:**
+   - `GET /api/v10/parts/d/{did}/w/{wid}/e/{eid}`
+5. **Verify exact bounding boxes:**
+   - `GET /api/v10/partstudios/d/{did}/w/{wid}/e/{eid}/boundingboxes`
+6. **Verify mass & volume properties:**
+   - `GET /api/v10/partstudios/d/{did}/w/{wid}/e/{eid}/massproperties`
+7. **Render shaded views (visual inspection PNG):**
+   - `GET /api/v10/partstudios/d/{did}/w/{wid}/e/{eid}/shadedviews?viewMatrix=isometric&outputHeight=800&outputWidth=800`
+
+---
+
+## 6. Implementation & Verification Criteria
 
 1. **Onshape Construction:**
-   - Build both parts cleanly in `Part Studio 1` (`3877013e0cee0529c7476669`) of document `b5b3469743d50b565ee40c26` via the Onshape REST API (using a clean parametric FeatureScript / feature creation call).
+   - Build both parts cleanly in `Part Studio 1` (`3877013e0cee0529c7476669`) of document `b5b3469743d50b565ee40c26` via the Onshape REST API.
    - Name the resulting solid bodies `Bottom Bin (2x2 8U)` and `Top Bin (2x2 4U)`.
+   - Position the two parts cleanly (e.g., either stacked in-place at `Z = 0` and `Z = 56.00 mm`, or side-by-side at `Z = 0` for immediate 3D printing export, plus assembled in `Assembly 1` `84c8a0fd2b9361f75c2d3a37`).
 2. **Automated Verification:**
-   - Query the Onshape REST API for feature regeneration status (no errors/warnings), part list, bounding boxes, and mass/volume properties.
+   - Query the Onshape REST API for feature regeneration status (zero errors/warnings), part list, bounding boxes, and mass/volume properties.
    - Export/render shaded thumbnail views from Onshape to visually verify the `2×2` base feet, `5-4-5-4-5` honeycomb pockets, corner grabber pass-through/receptacle, stacking lip, and finger-lift recesses.
