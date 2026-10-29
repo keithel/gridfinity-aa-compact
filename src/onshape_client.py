@@ -272,3 +272,66 @@ class OnshapeClient:
         )
         resp.raise_for_status()
         return resp.json() if resp.text else {}
+
+    def copy_element_from_document(
+        self,
+        source_did: str,
+        source_wid: str,
+        source_eid: str,
+    ) -> dict[str, Any]:
+        payload = {
+            "documentIdSource": source_did,
+            "workspaceIdSource": source_wid,
+            "elementIdSource": source_eid,
+            "isGroupAnchor": True,
+        }
+        resp = self.session.post(
+            self._url(f"elements/copyelement/{self.did}/workspace/{self.wid}"),
+            json=payload,
+            timeout=30,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    def transform_assembly_occurrence(
+        self,
+        node_id: str,
+        transform: list[float],
+        aeid: str | None = None,
+        is_relative: bool = False,
+    ) -> dict[str, Any]:
+        target_aeid = aeid or self.assembly_eid
+        payload = {
+            "isRelative": is_relative,
+            "occurrences": [{"path": [node_id]}],
+            "transform": transform,
+        }
+        resp = self.session.post(
+            self._url(f"assemblies/d/{self.did}/w/{self.wid}/e/{target_aeid}/occurrencetransforms"),
+            json=payload,
+            timeout=30,
+        )
+        resp.raise_for_status()
+        return resp.json() if resp.text else {}
+
+    def get_assembly_shaded_view(
+        self,
+        aeid: str | None = None,
+        view_matrix: str = "isometric",
+        output_height: int = 800,
+        output_width: int = 800,
+    ) -> dict[str, Any]:
+        target_aeid = aeid or self.assembly_eid
+        resp = self.session.get(
+            self._url(f"assemblies/d/{self.did}/w/{self.wid}/e/{target_aeid}/shadedviews"),
+            params={
+                "viewMatrix": view_matrix,
+                "outputHeight": output_height,
+                "outputWidth": output_width,
+                "pixelSize": 0,
+            },
+            timeout=60,
+        )
+        resp.raise_for_status()
+        return resp.json()
+

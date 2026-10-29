@@ -64,11 +64,24 @@ def test_solid_parts_names_bounding_boxes_and_volumes():
         assert bodies[pid]["volume"][0] > 1e-5
 
 
-def test_assembly_contains_both_bin_instances():
+def test_assembly_contains_bins_and_battery_grabber():
     client = OnshapeClient.from_env()
-    parts = client.get_parts(client.partstudio_eid)
-    expected_part_ids = {p["partId"] for p in parts}
+    elements = {el["name"]: el["id"] for el in client.get_elements()}
+    assert "Battery Grabber" in elements
+    grabber_eid = elements["Battery Grabber"]
+
+    grabber_parts = {p["name"]: p["partId"] for p in client.get_parts(grabber_eid)}
+    assert set(grabber_parts.keys()) == {"Main Body", "Support Fins"}
+
+    grabber_bbox = client.get_part_bounding_box(grabber_eid, grabber_parts["Main Body"])
+    assert math.isclose((grabber_bbox["highX"] - grabber_bbox["lowX"]) * 1000.0, 12.0, abs_tol=0.1)
+    assert math.isclose((grabber_bbox["highZ"] - grabber_bbox["lowZ"]) * 1000.0, 105.0, abs_tol=0.1)
+
+    bin_parts = client.get_parts(client.partstudio_eid)
+    expected_keys = {(client.partstudio_eid, p["partId"]) for p in bin_parts} | {
+        (grabber_eid, grabber_parts["Main Body"])
+    }
     instances = client.get_assembly_instances()
-    instance_part_ids = {inst.get("partId") for inst in instances}
-    assert len(instances) == 2
-    assert instance_part_ids == expected_part_ids
+    instance_keys = {(inst.get("elementId"), inst.get("partId")) for inst in instances}
+    assert len(instances) == 3
+    assert instance_keys == expected_keys

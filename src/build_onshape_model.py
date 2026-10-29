@@ -7,12 +7,47 @@ from pathlib import Path
 from typing import Any
 
 from src.featurescript_generator import generate_feature_studio_code
+from src.gridfinity_spec import DIMENSIONS, get_honeycomb_slots
 from src.onshape_client import OnshapeClient
 
 
 FEATURE_STUDIO_NAME = "Gridfinity AA Holder Generator"
 PART_STUDIO_NAME = "AA Battery Holder Bins"
+GRABBER_PART_STUDIO_NAME = "Battery Grabber"
 ASSEMBLY_NAME = "AA Battery Holder Assembly"
+
+GRABBER_SOURCE_DID = "c8113e21846b3e243f4047b0"
+GRABBER_SOURCE_WID = "85c21653a7b2a35730264c4a"
+GRABBER_SOURCE_EID = "efc09f3688cba75a14ed5637"
+
+
+def _get_grabber_assembly_transform() -> list[float]:
+    """Return 4x4 row-major transform (meters) seating Main Body magnet-down in the grabber pocket."""
+    grabber_slot = next(s for s in get_honeycomb_slots() if s.kind == "GRABBER")
+    tx_m = grabber_slot.x_mm / 1000.0
+    ty_m = grabber_slot.y_mm / 1000.0
+    # 180 deg rotation about X-axis: local Z=105mm (magnet head) -> Z=4mm floor; local Z=0mm (pommel) -> Z=109mm
+    tz_m = (DIMENSIONS["bottom_floor_z_mm"] + DIMENSIONS["grabber_length_mm"]) / 1000.0
+    return [
+        1.0,  0.0,  0.0, tx_m,
+        0.0, -1.0,  0.0, ty_m,
+        0.0,  0.0, -1.0, tz_m,
+        0.0,  0.0,  0.0, 1.0,
+    ]
+
+
+def _ensure_grabber_part_studio(client: OnshapeClient) -> str:
+    """Find or copy the Battery Grabber Part Studio (Main Body + Support Fins) into the document."""
+    for el in client.get_elements():
+        if el.get("elementType") == "PARTSTUDIO" and el.get("name") == GRABBER_PART_STUDIO_NAME:
+            return el["id"]
+    copied = client.copy_element_from_document(
+        source_did=GRABBER_SOURCE_DID,
+        source_wid=GRABBER_SOURCE_WID,
+        source_eid=GRABBER_SOURCE_EID,
+    )
+    return copied["id"]
+
 
 
 def _ensure_feature_studio(client: OnshapeClient) -> tuple[str, str]:
@@ -99,31 +134,61 @@ def build_and_publish() -> dict[str, Any]:
         )
         client.add_feature(client.partstudio_eid, payload)
 
-    # 5. Verify parts and populate Assembly cleanly (purging any stale instances first)
+    # 5. Ensure Battery Grabber Part Studio (Main Body + Support Fins) is in the document
+    grabber_eid = _ensure_grabber_part_studio(client)
+    grabber_parts = client.get_parts(grabber_eid)
+    grabber_main_pid = next(
+        p["partId"] for p in grabber_parts if p.get("name") == "Main Body"
+    )
+
+    # 6. Verify parts and populate Assembly cleanly (purging any stale instances first)
     parts = client.get_parts(client.partstudio_eid)
-    valid_part_ids = {p["partId"] for p in parts}
+    expected_keys = {(client.partstudio_eid, p["partId"]) for p in parts} | {
+        (grabber_eid, grabber_main_pid)
+    }
     existing_instances = client.get_assembly_instances(client.assembly_eid)
-    kept_part_ids: set[str] = set()
+    kept_keys: set[tuple[str, str]] = set()
     for inst in existing_instances:
         node_id = inst.get("id")
-        pid = inst.get("partId")
-        if pid in valid_part_ids and pid not in kept_part_ids:
-            kept_part_ids.add(pid)
+        key = (inst.get("elementId", ""), inst.get("partId", ""))
+        if key in expected_keys and key not in kept_keys:
+            kept_keys.add(key)
         elif node_id:
             client.delete_assembly_instance(node_id=node_id, aeid=client.assembly_eid)
     for part in parts:
-        pid = part["partId"]
-        if pid not in kept_part_ids:
-            client.add_assembly_instance(part_id=pid)
+        key = (client.partstudio_eid, part["partId"])
+        if key not in kept_keys:
+            client.add_assembly_instance(
+                part_id=part["partId"], part_studio_eid=client.partstudio_eid
+            )
+    if (grabber_eid, grabber_main_pid) not in kept_keys:
+        client.add_assembly_instance(
+            part_id=grabber_main_pid, part_studio_eid=grabber_eid
+        )
 
-    # 6. Export shaded view renders
+    # Seat Main Body in the front-right grabber pocket (magnet-end down, handle up)
+    updated_instances = client.get_assembly_instances(client.assembly_eid)
+    grabber_inst = next(
+        inst
+        for inst in updated_instances
+        if inst.get("elementId") == grabber_eid and inst.get("partId") == grabber_main_pid
+    )
+    client.transform_assembly_occurrence(
+        node_id=grabber_inst["id"],
+        transform=_get_grabber_assembly_transform(),
+        aeid=client.assembly_eid,
+    )
+
+    # 7. Export shaded view renders of the complete assembly
     renders_dir = Path(__file__).resolve().parent.parent / "docs" / "renders"
     renders_dir.mkdir(parents=True, exist_ok=True)
     for view_name, view_matrix in [
         ("isometric", "isometric"),
         ("top", "top"),
     ]:
-        view_data = client.get_shaded_view(client.partstudio_eid, view_matrix=view_matrix)
+        view_data = client.get_assembly_shaded_view(
+            client.assembly_eid, view_matrix=view_matrix
+        )
         images = view_data.get("images", [])
         if images:
             img_bytes = base64.b64decode(images[0])
@@ -131,7 +196,8 @@ def build_and_publish() -> dict[str, Any]:
 
     return {
         "feature_studio_eid": feid,
-        "parts": [p["name"] for p in parts],
+        "grabber_part_studio_eid": grabber_eid,
+        "parts": [p["name"] for p in parts] + [p["name"] for p in grabber_parts],
         "renders_dir": str(renders_dir),
     }
 
