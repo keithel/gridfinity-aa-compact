@@ -1,6 +1,7 @@
 """Geometry specification for the 2x2 Gridfinity AA Compact Battery Holder."""
 
 from dataclasses import dataclass
+import math
 
 DIMENSIONS: dict[str, float] = {
     "grid_pitch_mm": 42.00,
@@ -76,3 +77,23 @@ def get_honeycomb_slots() -> list[SlotSpec]:
             else:
                 slots.append(SlotSpec(x_mm=x, y_mm=y, diameter_mm=aa_d, kind="AA"))
     return slots
+
+
+def is_circle_inside_rounded_rect(
+    x_mm: float,
+    y_mm: float,
+    radius_mm: float,
+    half_span_mm: float,
+    corner_radius_mm: float,
+) -> bool:
+    """Return True if a circle of `radius_mm` at `(x_mm, y_mm)` is strictly inside a rounded square."""
+    ax = abs(x_mm)
+    ay = abs(y_mm)
+    if ax + radius_mm >= half_span_mm or ay + radius_mm >= half_span_mm:
+        return False
+    arc_center = half_span_mm - corner_radius_mm
+    if ax > arc_center and ay > arc_center:
+        dist_to_arc_center = math.hypot(ax - arc_center, ay - arc_center)
+        if dist_to_arc_center + radius_mm >= corner_radius_mm:
+            return False
+    return True

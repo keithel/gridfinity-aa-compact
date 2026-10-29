@@ -99,14 +99,21 @@ def build_and_publish() -> dict[str, Any]:
         )
         client.add_feature(client.partstudio_eid, payload)
 
-    # 5. Verify parts and populate Assembly if empty
+    # 5. Verify parts and populate Assembly cleanly (purging any stale instances first)
     parts = client.get_parts(client.partstudio_eid)
-    asm_def = client.get_assembly_definition(client.assembly_eid)
-    existing_instances = asm_def.get("rootAssembly", {}).get("instances", [])
-    existing_part_ids = {inst.get("partId") for inst in existing_instances}
+    valid_part_ids = {p["partId"] for p in parts}
+    existing_instances = client.get_assembly_instances(client.assembly_eid)
+    kept_part_ids: set[str] = set()
+    for inst in existing_instances:
+        node_id = inst.get("id")
+        pid = inst.get("partId")
+        if pid in valid_part_ids and pid not in kept_part_ids:
+            kept_part_ids.add(pid)
+        elif node_id:
+            client.delete_assembly_instance(node_id=node_id, aeid=client.assembly_eid)
     for part in parts:
         pid = part["partId"]
-        if pid not in existing_part_ids:
+        if pid not in kept_part_ids:
             client.add_assembly_instance(part_id=pid)
 
     # 6. Export shaded view renders

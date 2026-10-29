@@ -62,3 +62,13 @@ def test_solid_parts_names_bounding_boxes_and_volumes():
             assert math.isclose(bbox["lowZ"] * 1000.0, 56.00, abs_tol=0.1)
             assert math.isclose(dz, 28.00, abs_tol=0.1), f"Top Bin dz={dz}"
         assert bodies[pid]["volume"][0] > 1e-5
+
+
+def test_assembly_contains_both_bin_instances():
+    client = OnshapeClient.from_env()
+    parts = client.get_parts(client.partstudio_eid)
+    expected_part_ids = {p["partId"] for p in parts}
+    instances = client.get_assembly_instances()
+    instance_part_ids = {inst.get("partId") for inst in instances}
+    assert len(instances) == 2
+    assert instance_part_ids == expected_part_ids

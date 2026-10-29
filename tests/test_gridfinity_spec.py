@@ -1,5 +1,5 @@
 import math
-from src.gridfinity_spec import DIMENSIONS, get_honeycomb_slots
+from src.gridfinity_spec import DIMENSIONS, get_honeycomb_slots, is_circle_inside_rounded_rect
 from src.onshape_client import OnshapeClient
 
 
@@ -19,15 +19,19 @@ def test_honeycomb_slot_counts_and_grabber_position():
 def test_inter_cell_wall_thickness_and_lip_clearance():
     slots = get_honeycomb_slots()
     inner_lip_half = DIMENSIONS["inner_lip_span_mm"] / 2.0  # 39.15 mm
+    inner_lip_corner_r = DIMENSIONS["inner_lip_corner_radius_mm"]  # 1.15 mm
     for i, a in enumerate(slots):
         ra = a.diameter_mm / 2.0
         assert abs(a.x_mm) + ra < inner_lip_half
         assert abs(a.y_mm) + ra < inner_lip_half
+        assert is_circle_inside_rounded_rect(a.x_mm, a.y_mm, ra, inner_lip_half, inner_lip_corner_r)
         for b in slots[i + 1 :]:
             rb = b.diameter_mm / 2.0
             dist = math.hypot(a.x_mm - b.x_mm, a.y_mm - b.y_mm)
             wall = dist - (ra + rb)
             assert wall >= 0.79, f"Wall too thin ({wall:.3f} mm) between {a} and {b}"
+    # Verify a hypothetical circle encroaching the R1.15 mm corner arc at (38.0, 38.0) is rejected
+    assert not is_circle_inside_rounded_rect(38.50, 38.50, 0.50, inner_lip_half, inner_lip_corner_r)
 
 
 def test_vertical_z_stack_budget():

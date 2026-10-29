@@ -235,6 +235,10 @@ class OnshapeClient:
         resp.raise_for_status()
         return resp.json()
 
+    def get_assembly_instances(self, aeid: str | None = None) -> list[dict[str, Any]]:
+        asm_def = self.get_assembly_definition(aeid)
+        return asm_def.get("rootAssembly", {}).get("instances", [])
+
     def add_assembly_instance(
         self,
         part_id: str,
@@ -253,6 +257,17 @@ class OnshapeClient:
         resp = self.session.post(
             self._url(f"assemblies/d/{self.did}/w/{self.wid}/e/{target_aeid}/instances"),
             json=payload,
+            timeout=30,
+        )
+        resp.raise_for_status()
+        return resp.json() if resp.text else {}
+
+    def delete_assembly_instance(self, node_id: str, aeid: str | None = None) -> dict[str, Any]:
+        target_aeid = aeid or self.assembly_eid
+        from urllib.parse import quote
+        encoded_id = quote(node_id, safe="")
+        resp = self.session.delete(
+            self._url(f"assemblies/d/{self.did}/w/{self.wid}/e/{target_aeid}/instance/nodeid/{encoded_id}"),
             timeout=30,
         )
         resp.raise_for_status()
